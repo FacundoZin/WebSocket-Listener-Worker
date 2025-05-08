@@ -1,4 +1,4 @@
-namespace WebSocket_Listener_Worker
+namespace WebSocket_Listener_Worker.src.Services
 {
     public class Worker : BackgroundService
     {

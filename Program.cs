@@ -1,4 +1,4 @@
-using WebSocket_Listener_Worker;
+using WebSocket_Listener_Worker.src.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
