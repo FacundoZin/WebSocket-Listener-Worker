@@ -14,6 +14,11 @@ namespace WebSocket_Listener_Worker.src.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _WebsocketListener.Start();
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(1000, stoppingToken);
+            }
         }
     }
 }

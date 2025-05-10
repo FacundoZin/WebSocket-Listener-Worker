@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using WebSocket_Listener_Worker.src.Publishers;
 using System.Text.Json;
 using WebSocket_Listener_Worker.src.Models;
+using Microsoft.Extensions.DependencyInjection;
+using WebSocket_Listener_Worker.Data;
 
 namespace WebSocket_Listener_Worker.src.Listeners
 {
@@ -15,6 +17,7 @@ namespace WebSocket_Listener_Worker.src.Listeners
         private readonly IConfiguration _Configuration;
         private WebSocket _WebSocket;
         private readonly RabbitMQPublisher _Publisher;
+        private ServiceProvider _ServiceProvider;
         
         public WebSocketListener(IConfiguration configuration, RabbitMQPublisher Publisher)
         {
@@ -30,6 +33,8 @@ namespace WebSocket_Listener_Worker.src.Listeners
             _WebSocket.Connect();
         }
 
+        
+
         private async void OnMessageReceived(object sender, MessageEventArgs e)
         {
             try
@@ -40,7 +45,36 @@ namespace WebSocket_Listener_Worker.src.Listeners
             }
             catch (Exception ex)
             {
+            }
+        }
 
+        private List<string> GetSymbols()
+        {
+            using var scope = _ServiceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var symbols = context.stocks
+                                 .Select(s => s.Symbol)
+                                 .Distinct()
+                                 .ToList();
+
+            return symbols;
+        }
+
+        private void SuscribeToSymbol()
+        {
+            var symbols = GetSymbols();
+
+            foreach ( var symbol in symbols )
+            {
+                var subscribeMessage = new
+                {
+                    type = "subscribe",
+                    symbol = symbol
+                };
+
+                var jsonMessage = JsonSerializer.Serialize(subscribeMessage);
+                _WebSocket.Send(jsonMessage);
             }
         }
     }
