@@ -5,6 +5,8 @@ using WebSocketSharp;
 using System.Text;
 using System.Threading.Tasks;
 using WebSocket_Listener_Worker.src.Publishers;
+using System.Text.Json;
+using WebSocket_Listener_Worker.src.Models;
 
 namespace WebSocket_Listener_Worker.src.Listeners
 {
@@ -12,12 +14,12 @@ namespace WebSocket_Listener_Worker.src.Listeners
     {
         private readonly IConfiguration _Configuration;
         private WebSocket _WebSocket;
-        private readonly RabbitMQPublisher _RabbitMQPublisher;
+        private readonly RabbitMQPublisher _Publisher;
         
-        public WebSocketListener(IConfiguration configuration, RabbitMQPublisher rabbitMQPublisher)
+        public WebSocketListener(IConfiguration configuration, RabbitMQPublisher Publisher)
         {
             _Configuration = configuration;
-            _RabbitMQPublisher = rabbitMQPublisher;
+            _Publisher = Publisher;
         }
 
         public void Start()
@@ -28,12 +30,13 @@ namespace WebSocket_Listener_Worker.src.Listeners
             _WebSocket.Connect();
         }
 
-        private void OnMessageReceived(object sender, MessageEventArgs e)
+        private async void OnMessageReceived(object sender, MessageEventArgs e)
         {
             try
             {
-                
-
+                var message = JsonSerializer.Deserialize<PriceData>(e.Data);
+                var routingKey = $"stock.price.{message.Symbol}";
+                await _Publisher.Publish(routingKey, message);
             }
             catch (Exception ex)
             {
